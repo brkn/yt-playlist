@@ -24,3 +24,9 @@ yt_playlist-*.tar
 
 # Escript binary
 /yt_playlist
+
+# Burrito output
+/burrito_out/
+
+# Local test databases
+*.db
