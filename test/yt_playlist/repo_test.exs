@@ -82,4 +82,82 @@ defmodule YtPlaylist.RepoTest do
       assert video.playlist_name == "My Playlist"
     end
   end
+
+  describe "videos/2" do
+    test "sorts by recent (upload_date desc) by default", %{db_path: db_path} do
+      videos = [
+        %Video{
+          title: "Old",
+          webpage_url: "https://youtube.com/watch?v=old",
+          upload_date: "20230101"
+        },
+        %Video{
+          title: "New",
+          webpage_url: "https://youtube.com/watch?v=new",
+          upload_date: "20240601"
+        }
+      ]
+
+      {:ok, 2} = Repo.save_videos(db_path, "Test", videos)
+      {:ok, results} = Repo.videos(db_path)
+
+      assert [first, second] = results
+      assert first.title == "New"
+      assert second.title == "Old"
+    end
+
+    test "sorts by hot score (views / days since upload)", %{db_path: db_path} do
+      # Old video with many views vs recent video with modest views
+      # Recent video wins because hot = views / days_old
+      videos = [
+        %Video{
+          title: "Old Popular",
+          webpage_url: "https://youtube.com/watch?v=old",
+          upload_date: "20200101",
+          view_count: 100_000
+        },
+        %Video{
+          title: "Recent Modest",
+          webpage_url: "https://youtube.com/watch?v=new",
+          upload_date: "20260101",
+          view_count: 10_000
+        }
+      ]
+
+      {:ok, 2} = Repo.save_videos(db_path, "Test", videos)
+      {:ok, results} = Repo.videos(db_path, sort: :hot)
+
+      # Old Popular: 100,000 / ~2190 days ≈ 46 views/day
+      # Recent Modest: 10,000 / ~27 days ≈ 370 views/day
+      assert [first, second] = results
+      assert first.title == "Recent Modest"
+      assert second.title == "Old Popular"
+    end
+
+    test "respects limit option", %{db_path: db_path} do
+      videos = [
+        %Video{title: "A", webpage_url: "https://youtube.com/watch?v=a", upload_date: "20240101"},
+        %Video{title: "B", webpage_url: "https://youtube.com/watch?v=b", upload_date: "20240102"},
+        %Video{title: "C", webpage_url: "https://youtube.com/watch?v=c", upload_date: "20240103"}
+      ]
+
+      {:ok, 3} = Repo.save_videos(db_path, "Test", videos)
+      {:ok, results} = Repo.videos(db_path, limit: 2)
+
+      assert length(results) == 2
+    end
+
+    test "returns all videos when no limit specified", %{db_path: db_path} do
+      videos = [
+        %Video{title: "A", webpage_url: "https://youtube.com/watch?v=a", upload_date: "20240101"},
+        %Video{title: "B", webpage_url: "https://youtube.com/watch?v=b", upload_date: "20240102"},
+        %Video{title: "C", webpage_url: "https://youtube.com/watch?v=c", upload_date: "20240103"}
+      ]
+
+      {:ok, 3} = Repo.save_videos(db_path, "Test", videos)
+      {:ok, results} = Repo.videos(db_path)
+
+      assert length(results) == 3
+    end
+  end
 end
