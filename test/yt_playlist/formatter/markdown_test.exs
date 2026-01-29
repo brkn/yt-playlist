@@ -9,6 +9,7 @@ defmodule YtPlaylist.Formatter.MarkdownTest do
       video = %Video{
         title: "Test Video",
         webpage_url: "https://youtube.com/watch?v=abc123",
+        upload_date: "20240315",
         duration_string: "12:34",
         view_count: 1_234_567,
         like_count: 12_345,
@@ -22,11 +23,10 @@ defmodule YtPlaylist.Formatter.MarkdownTest do
         ## Test Video
 
         - URL: https://youtube.com/watch?v=abc123
+        - Date: 2024-03-15
         - Duration: 12:34
         - Views: 1,234,567
         - Likes: 12,345
-
-        A test description.
         """
         |> String.trim_trailing()
 

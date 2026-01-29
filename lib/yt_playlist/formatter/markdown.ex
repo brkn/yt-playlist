@@ -19,13 +19,24 @@ defmodule YtPlaylist.Formatter.Markdown do
     ## #{video.title}
 
     - URL: #{video.webpage_url}
+    - Date: #{format_date(video.upload_date)}
     - Duration: #{video.duration_string}
     - Views: #{format_number(video.view_count)}
     - Likes: #{format_number(video.like_count)}
-
-    #{video.description}
     """
     |> String.trim_trailing()
+  end
+
+  defp format_date(nil), do: "Unknown"
+
+  defp format_date(date) when is_binary(date) do
+    case date do
+      <<year::binary-size(4), month::binary-size(2), day::binary-size(2)>> ->
+        "#{year}-#{month}-#{day}"
+
+      _ ->
+        date
+    end
   end
 
   defp format_number(nil), do: "0"
