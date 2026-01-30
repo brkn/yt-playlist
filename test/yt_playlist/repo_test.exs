@@ -106,32 +106,49 @@ defmodule YtPlaylist.RepoTest do
       assert second.title == "Old"
     end
 
-    test "sorts by hot score (views / days since upload)", %{db_path: db_path} do
-      # Old video with many views vs recent video with modest views
-      # Recent video wins because hot = views / days_old
+    test "sorts by hot score with gravity decay", %{db_path: db_path} do
+      # Expected: recent viral dominates, ancient loses despite high views
+      # Formula: (views + 0.6 × likes)^0.8 / (days + 1)^1.5
+      today = Date.utc_today()
+
       videos = [
         %Video{
-          title: "Old Popular",
-          webpage_url: "https://youtube.com/watch?v=old",
-          upload_date: "20200101",
-          view_count: 100_000
+          title: "Ancient legendary",
+          webpage_url: "https://youtube.com/watch?v=ancient",
+          upload_date: date_string(Date.add(today, -18 * 365)),
+          view_count: 22_000_000,
+          like_count: 1_000_000
         },
         %Video{
-          title: "Recent Modest",
-          webpage_url: "https://youtube.com/watch?v=new",
-          upload_date: "20260101",
-          view_count: 10_000
+          title: "Old mega-viral",
+          webpage_url: "https://youtube.com/watch?v=old",
+          upload_date: date_string(Date.add(today, -10 * 365)),
+          view_count: 57_000_000,
+          like_count: 2_000_000
+        },
+        %Video{
+          title: "Fresh modest",
+          webpage_url: "https://youtube.com/watch?v=fresh",
+          upload_date: date_string(Date.add(today, -180)),
+          view_count: 175_000,
+          like_count: 10_000
+        },
+        %Video{
+          title: "Recent viral",
+          webpage_url: "https://youtube.com/watch?v=recent",
+          upload_date: date_string(Date.add(today, -30)),
+          view_count: 18_000_000,
+          like_count: 900_000
         }
       ]
 
-      {:ok, 2} = Repo.save_videos(db_path, "Test", videos)
+      {:ok, 4} = Repo.save_videos(db_path, "Test", videos)
       {:ok, results} = Repo.videos(db_path, sort: :hot)
 
-      # Old Popular: 100,000 / ~2190 days ≈ 46 views/day
-      # Recent Modest: 10,000 / ~27 days ≈ 370 views/day
-      assert [first, second] = results
-      assert first.title == "Recent Modest"
-      assert second.title == "Old Popular"
+      titles = Enum.map(results, & &1.title)
+
+      assert titles == ["Recent viral", "Old mega-viral", "Fresh modest", "Ancient legendary"]
+      assert List.last(titles) == "Ancient legendary"
     end
 
     test "respects limit option", %{db_path: db_path} do
@@ -159,5 +176,9 @@ defmodule YtPlaylist.RepoTest do
 
       assert length(results) == 3
     end
+  end
+
+  defp date_string(%Date{year: y, month: m, day: d}) do
+    :io_lib.format("~4..0B~2..0B~2..0B", [y, m, d]) |> to_string()
   end
 end

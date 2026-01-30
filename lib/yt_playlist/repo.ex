@@ -12,6 +12,7 @@ defmodule YtPlaylist.Repo do
 
   import Ecto.Query
 
+  alias YtPlaylist.HotScore
   alias YtPlaylist.Video
 
   @create_table_sql """
@@ -88,7 +89,7 @@ defmodule YtPlaylist.Repo do
   Query videos with sorting and limiting.
 
   Options:
-    - `:sort` - `:hot` (view_count / days_since_upload) or `:recent` (upload_date desc, default)
+    - `:sort` - `:hot` (engagement/recency score) or `:recent` (upload_date desc, default)
     - `:limit` - integer or nil (default: nil, meaning all)
 
   Returns `{:ok, videos}` list of Video structs.
@@ -98,13 +99,28 @@ defmodule YtPlaylist.Repo do
     limit = Keyword.get(opts, :limit)
 
     with_connection(db_path, fn ->
-      query =
-        sort
-        |> sorted_videos_query()
-        |> maybe_limit(limit)
+      videos = all(sorted_videos_query(sort))
 
-      {:ok, all(query)}
+      sorted =
+        case sort do
+          :hot -> sort_by_hot_score(videos)
+          _ -> videos
+        end
+
+      limited = if limit, do: Enum.take(sorted, limit), else: sorted
+      {:ok, limited}
     end)
+  end
+
+  defp sort_by_hot_score(videos) do
+    videos
+    |> Enum.map(fn video ->
+      days = HotScore.days_since_upload(video.upload_date)
+      score = HotScore.calculate(video.view_count, video.like_count, days)
+      {video, score}
+    end)
+    |> Enum.sort_by(fn {_, score} -> score end, :desc)
+    |> Enum.map(fn {video, _} -> video end)
   end
 
   defp with_connection(db_path, fun) do
@@ -119,23 +135,7 @@ defmodule YtPlaylist.Repo do
   end
 
   defp sorted_videos_query(:hot) do
-    # hot_score = view_count / days_since_upload
-    # Use max(1, days) to avoid division by zero for same-day uploads
-    # upload_date is in yt-dlp format YYYYMMDD, convert to ISO for julianday
-    from(v in Video,
-      order_by: [
-        desc:
-          fragment(
-            "COALESCE(?, 0) * 1.0 / max(1, julianday('now') - julianday(substr(?, 1, 4) || '-' || substr(?, 5, 2) || '-' || substr(?, 7, 2)))",
-            v.view_count,
-            v.upload_date,
-            v.upload_date,
-            v.upload_date
-          )
-      ]
-    )
+    # Hot sorting is done in Elixir via sort_by_hot_score/1
+    from(v in Video)
   end
-
-  defp maybe_limit(query, nil), do: query
-  defp maybe_limit(query, n), do: from(q in query, limit: ^n)
 end
