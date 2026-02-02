@@ -76,7 +76,6 @@ defmodule YtPlaylist.CLI.QueryTest do
           assert :ok = Query.run(db_path, sort: :hot)
         end)
 
-
       # TODO: make simpler assertions
       # Maybe the regex would just suffice since they would be ordered.
       new_pos = :binary.match(output, "New Video") |> elem(0)
@@ -106,7 +105,6 @@ defmodule YtPlaylist.CLI.QueryTest do
           assert :ok = Query.run(db_path, sort: :recent)
         end)
 
-
       # TODO: make simpler assertions
       # Maybe the regex would just suffice since they would be ordered.
       newer_pos = :binary.match(output, "Newer Video") |> elem(0)
@@ -132,7 +130,6 @@ defmodule YtPlaylist.CLI.QueryTest do
         capture_io(fn ->
           assert :ok = Query.run(db_path, sort: :recent, limit: 2)
         end)
-
 
       # TODO: make simpler assertions
       # Maybe the regex would just suffice since they would be ordered.

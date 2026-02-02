@@ -82,8 +82,11 @@ Export as markdown:
 
 - yt-dlp (for extraction only, not needed for querying existing databases)
 - Firefox with YouTube cookies (yt-dlp uses `--cookies-from-browser firefox`)
+  - [ ] TODO: remove this after ux improvements. There is a task for configuration.
 
 ## TODO
+
+- [ ] BUG: extract command printing: 0 videos saved?
 
 - [ ] `--sort popular` option (pure view count)
 - [ ] Suppress yt-dlp output unless `--verbose` passed

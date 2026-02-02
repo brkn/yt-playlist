@@ -9,8 +9,9 @@ defmodule YtPlaylist.CLI.Extract do
   Extracts playlist metadata from URL and saves to a SQLite database.
   """
   def run(url) do
-    with {:ok, title} <- YtDlp.playlist_title(url),
-         db_path = sanitize_filename(title) <> ".db",
+    with {:ok, playlist_id} <- extract_playlist_id(url),
+         {:ok, title} <- YtDlp.playlist_title(url),
+         db_path = playlist_id <> ".db",
          :ok <- check_existing(db_path),
          {:ok, videos} <- YtDlp.fetch_playlist(url),
          {:ok, count} <- Repo.save_videos(db_path, title, videos) do
@@ -18,10 +19,18 @@ defmodule YtPlaylist.CLI.Extract do
     end
   end
 
-  defp sanitize_filename(name) do
-    name
-    |> String.replace(~r/[^a-zA-Z0-9_-]/, "_")
-    |> String.replace(~r/_+/, "_")
+  @doc """
+  Extracts the playlist ID from a YouTube playlist URL.
+
+  Returns `{:ok, playlist_id}` or `{:error, reason}` if not found.
+  """
+  def extract_playlist_id(url) do
+    with %URI{query: query} when query != nil <- URI.parse(url),
+         {:ok, id} <- query |> URI.decode_query() |> Map.fetch("list") do
+      {:ok, id}
+    else
+      _ -> {:error, "could not extract playlist ID from URL"}
+    end
   end
 
   defp check_existing(db_path) do
