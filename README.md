@@ -94,8 +94,8 @@ Export as markdown:
   - `...fetching the playlist 1/?` or spinner idk
 
 - [ ] UX rewrite
-  - [ ] Cache databases in XDG/Application Support directory
-  - [ ] Name db files by playlist ID (`PLxxxxx.db`)
+  - [x] Cache databases in `~/.config/yt-playlist`
+  - [x] Name db files by playlist ID (`PLxxxxx.db`)
   - [ ] Interactive browser config on first extract:
     ```
     $ yt_playlist "https://..."
@@ -105,7 +105,7 @@ Export as markdown:
       3. safari
       4. edge
     > 1
-    Saved to ~/.config/yt_playlist/config
+    Saved to ~/.config/yt_playlist/
     ```
   - [ ] Accept URL directly for query/export (auto-extract if not cached)
   - [ ] Command to show cached playlists

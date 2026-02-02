@@ -4,12 +4,15 @@ defmodule YtPlaylist.CLI do
   """
 
   alias YtPlaylist.CLI.{Extract, Export, Query}
+  alias YtPlaylist.Config
 
   @doc """
   Main entry point for the escript.
   """
   @dialyzer {:nowarn_function, main: 1}
   def main(args) do
+    Config.ensure_dirs!()
+
     case args do
       ["extract", url] -> Extract.run(url)
       ["export-to-md" | rest] -> parse_export(rest)
