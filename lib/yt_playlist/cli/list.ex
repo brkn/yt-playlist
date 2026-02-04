@@ -3,7 +3,7 @@ defmodule YtPlaylist.CLI.List do
   Handles the list command - shows cached playlists.
   """
 
-  alias YtPlaylist.Config
+  alias YtPlaylist.{Config, Playlist}
 
   @doc """
   Lists all cached playlist databases.
@@ -34,7 +34,7 @@ defmodule YtPlaylist.CLI.List do
   defp format_output(db_files, config_dir) do
     db_files
     |> Enum.each(fn file ->
-      playlist_id = String.trim_trailing(file, ".db")
+      playlist_id = Playlist.id_from_filename(file)
       full_path = Path.join(config_dir, file)
       IO.puts("#{playlist_id}  #{full_path}")
     end)

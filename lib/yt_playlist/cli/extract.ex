@@ -3,7 +3,7 @@ defmodule YtPlaylist.CLI.Extract do
   Handles the extract command - fetches playlist metadata and saves to SQLite.
   """
 
-  alias YtPlaylist.{Config, YtDlp, Repo}
+  alias YtPlaylist.{Playlist, YtDlp, Repo}
 
   @doc """
   Extracts playlist metadata from URL and saves to a SQLite database.
@@ -16,7 +16,7 @@ defmodule YtPlaylist.CLI.Extract do
 
     with {:ok, playlist_id} <- extract_playlist_id(url),
          {:ok, title} <- YtDlp.playlist_title(url),
-         db_path = Config.db_path(playlist_id),
+         db_path = Playlist.db_path(playlist_id),
          :ok <- maybe_check_existing(db_path, force),
          {:ok, videos} <- YtDlp.fetch_playlist(url),
          {:ok, count} <- Repo.save_videos(db_path, title, videos) do
