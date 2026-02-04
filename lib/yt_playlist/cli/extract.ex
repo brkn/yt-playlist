@@ -7,12 +7,17 @@ defmodule YtPlaylist.CLI.Extract do
 
   @doc """
   Extracts playlist metadata from URL and saves to a SQLite database.
+
+  Options:
+    - `:force` - skip existing database check (default: false)
   """
-  def run(url) do
+  def run(url, opts \\ []) do
+    force = Keyword.get(opts, :force, false)
+
     with {:ok, playlist_id} <- extract_playlist_id(url),
          {:ok, title} <- YtDlp.playlist_title(url),
          db_path = Config.db_path(playlist_id),
-         :ok <- check_existing(db_path),
+         :ok <- maybe_check_existing(db_path, force),
          {:ok, videos} <- YtDlp.fetch_playlist(url),
          {:ok, count} <- Repo.save_videos(db_path, title, videos) do
       {:ok, "Saved #{count} videos to #{db_path}"}
@@ -33,7 +38,9 @@ defmodule YtPlaylist.CLI.Extract do
     end
   end
 
-  defp check_existing(db_path) do
+  defp maybe_check_existing(_db_path, true), do: :ok
+
+  defp maybe_check_existing(db_path, false) do
     case Repo.db_exists?(db_path) do
       {:error, :not_found} ->
         :ok

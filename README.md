@@ -109,7 +109,6 @@ Export as markdown:
   - [ ] Command to show cached playlists
     - Naming: `list` `playlists` or  `ls`?
     - Output: show full path (`~/...`) as last column for easy `rm`
-  - [ ] Flag to force re-extraction
-    - [ ] Naming: `--refresh`? `--update`? `--force`?
+  - [x] Flag to force re-extraction (`--force`)
 
 - [ ] Cross-platform binaries (Linux, Windows)

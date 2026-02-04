@@ -14,13 +14,20 @@ defmodule YtPlaylist.CLI do
     Config.ensure_dirs!()
 
     case args do
-      ["extract", url] -> Extract.run(url)
+      ["extract" | rest] -> parse_extract(rest)
       ["export-to-md" | rest] -> parse_export(rest)
       ["query" | rest] -> parse_query(rest)
       _ -> exit_with_usage()
     end
     |> handle_result()
   end
+
+  defp parse_extract([url | rest]) do
+    {opts, _, _} = OptionParser.parse(rest, strict: [force: :boolean])
+    Extract.run(url, opts)
+  end
+
+  defp parse_extract([]), do: exit_with_usage()
 
   defp parse_export([db_path | rest]) do
     {opts, _, _} =
@@ -65,13 +72,16 @@ defmodule YtPlaylist.CLI do
     Usage: yt_playlist <command>
 
     Commands:
-      extract <url>                    Extract playlist to SQLite
+      extract <url> [options]          Extract playlist to SQLite
       export-to-md <db> [options]      Export videos as markdown
       query <db> [options]             Query videos as ASCII table
 
-    Options:
+    Extract options:
+      --force              Re-extract even if already indexed
+
+    Query/Export options:
       --sort hot|recent|popular    Sort order (default: recent)
-      --limit N            Limit output to N videos
+      --limit N                    Limit output to N videos
     """)
 
     System.halt(1)
