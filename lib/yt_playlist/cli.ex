@@ -3,7 +3,7 @@ defmodule YtPlaylist.CLI do
   Command-line interface entry point for yt_playlist.
   """
 
-  alias YtPlaylist.CLI.{Extract, Export, Query}
+  alias YtPlaylist.CLI.{Extract, Export, List, Query}
   alias YtPlaylist.Config
 
   @doc """
@@ -17,6 +17,7 @@ defmodule YtPlaylist.CLI do
       ["extract" | rest] -> parse_extract(rest)
       ["export-to-md" | rest] -> parse_export(rest)
       ["query" | rest] -> parse_query(rest)
+      ["list"] -> List.run()
       _ -> exit_with_usage()
     end
     |> handle_result()
@@ -75,6 +76,7 @@ defmodule YtPlaylist.CLI do
       extract <url> [options]          Extract playlist to SQLite
       export-to-md <db> [options]      Export videos as markdown
       query <db> [options]             Query videos as ASCII table
+      list                             Show cached playlists
 
     Extract options:
       --force              Re-extract even if already indexed

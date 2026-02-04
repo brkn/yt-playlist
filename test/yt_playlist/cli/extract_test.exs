@@ -7,6 +7,7 @@ defmodule YtPlaylist.CLI.ExtractTest do
   @test_playlist_url "https://www.youtube.com/playlist?list=PLbpi6ZahtOH73nBVnYgO3xfzfuO5RurZS"
 
   describe "run/2 with force option" do
+    @tag :integration
     test "force: true skips existing db check" do
       {:ok, playlist_id} = Extract.extract_playlist_id(@test_playlist_url)
       db_path = Config.db_path(playlist_id)

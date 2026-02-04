@@ -106,9 +106,7 @@ Export as markdown:
     Saved to ~/.config/yt_playlist/
     ```
   - [ ] Accept URL directly for query/export (auto-extract if not cached)
-  - [ ] Command to show cached playlists
-    - Naming: `list` `playlists` or  `ls`?
-    - Output: show full path (`~/...`) as last column for easy `rm`
+  - [x] Command to show cached playlists (`list`)
   - [x] Flag to force re-extraction (`--force`)
 
 - [ ] Cross-platform binaries (Linux, Windows)
