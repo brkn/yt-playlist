@@ -50,6 +50,15 @@ defmodule YtPlaylist.CLI.QueryTest do
       assert {:error, "database not found: /nonexistent/path.db"} = result
     end
 
+    test "returns error for unsupported sort", %{db_path: db_path} do
+      {:ok, 1} =
+        Repo.save_videos(db_path, "Test", [
+          %Video{title: "V", webpage_url: "https://youtube.com/watch?v=x"}
+        ])
+
+      assert {:error, "sort 'nonsense' not implemented"} = Query.run(db_path, sort: :nonsense)
+    end
+
     test "--sort hot returns videos sorted by hot score", %{db_path: db_path} do
       today = Date.utc_today() |> Date.to_iso8601(:basic)
       old_date = "20200101"
@@ -167,6 +176,103 @@ defmodule YtPlaylist.CLI.QueryTest do
       low_pos = :binary.match(output, "Low Views") |> elem(0)
 
       assert high_pos < low_pos, "High views video should appear first with popular sort"
+    end
+  end
+
+  describe "run/2 with -o output option" do
+    test "writes markdown to file", %{db_path: db_path} do
+      videos = [
+        %Video{
+          title: "Test Video",
+          webpage_url: "https://youtube.com/watch?v=test1",
+          duration_string: "10:00",
+          view_count: 1000,
+          like_count: 100,
+          description: "A test video",
+          upload_date: "20240101"
+        }
+      ]
+
+      {:ok, 1} = Repo.save_videos(db_path, "Test Playlist", videos)
+
+      output_path = Path.join(@test_db_dir, "output_#{System.unique_integer([:positive])}.md")
+
+      on_exit(fn ->
+        File.rm(output_path)
+      end)
+
+      result = Query.run(db_path, output: output_path)
+
+      assert {:ok, "Saved to " <> ^output_path} = result
+
+      expected = File.read!("test/fixtures/expected_export.md")
+      actual = File.read!(output_path)
+      assert String.trim(actual) == String.trim(expected)
+    end
+
+    test "--sort hot with -o writes sorted markdown to file", %{db_path: db_path} do
+      today = Date.utc_today() |> Date.to_iso8601(:basic)
+      old_date = "20200101"
+
+      videos = [
+        %Video{
+          title: "Old Popular Video",
+          webpage_url: "https://youtube.com/watch?v=old",
+          view_count: 1_000_000,
+          upload_date: old_date
+        },
+        %Video{
+          title: "New Video",
+          webpage_url: "https://youtube.com/watch?v=new",
+          view_count: 10_000,
+          upload_date: today
+        }
+      ]
+
+      {:ok, 2} = Repo.save_videos(db_path, "Test", videos)
+
+      output_path = Path.join(@test_db_dir, "output_#{System.unique_integer([:positive])}.md")
+
+      on_exit(fn ->
+        File.rm(output_path)
+      end)
+
+      assert {:ok, _} = Query.run(db_path, sort: :hot, output: output_path)
+
+      output = File.read!(output_path)
+      new_pos = :binary.match(output, "New Video") |> elem(0)
+      old_pos = :binary.match(output, "Old Popular Video") |> elem(0)
+
+      assert new_pos < old_pos, "New video should appear before old popular video with hot sort"
+    end
+
+    test "--limit with -o restricts output count", %{db_path: db_path} do
+      videos =
+        1..5
+        |> Enum.map(fn i ->
+          %Video{
+            title: "Video #{i}",
+            webpage_url: "https://youtube.com/watch?v=v#{i}",
+            upload_date: "2024010#{i}"
+          }
+        end)
+
+      {:ok, 5} = Repo.save_videos(db_path, "Test", videos)
+
+      output_path = Path.join(@test_db_dir, "output_#{System.unique_integer([:positive])}.md")
+
+      on_exit(fn ->
+        File.rm(output_path)
+      end)
+
+      assert {:ok, _} = Query.run(db_path, sort: :recent, limit: 2, output: output_path)
+
+      output = File.read!(output_path)
+      assert output =~ "Video 5"
+      assert output =~ "Video 4"
+      refute output =~ "Video 3"
+      refute output =~ "Video 2"
+      refute output =~ "Video 1"
     end
   end
 end
