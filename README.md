@@ -86,9 +86,7 @@ Export as markdown:
 
 ## TODO
 
-- [ ] BUG: extract command printing: 0 videos saved?
-
-- [ ] `--sort popular` option (pure view count)
+- [x] `--sort popular` option (pure view count)
 - [ ] Suppress yt-dlp output unless `--verbose` passed
   - Commands should still hold the hand of the user
   - `...fetching the playlist 1/?` or spinner idk

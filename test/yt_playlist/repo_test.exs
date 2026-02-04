@@ -176,6 +176,32 @@ defmodule YtPlaylist.RepoTest do
 
       assert length(results) == 3
     end
+
+    test "sorts by popular (view_count desc)", %{db_path: db_path} do
+      videos = [
+        %Video{
+          title: "Low views",
+          webpage_url: "https://youtube.com/watch?v=low",
+          view_count: 100
+        },
+        %Video{
+          title: "High views",
+          webpage_url: "https://youtube.com/watch?v=high",
+          view_count: 1_000_000
+        },
+        %Video{
+          title: "Medium views",
+          webpage_url: "https://youtube.com/watch?v=medium",
+          view_count: 50_000
+        }
+      ]
+
+      {:ok, 3} = Repo.save_videos(db_path, "Test", videos)
+      {:ok, results} = Repo.videos(db_path, sort: :popular)
+
+      titles = Enum.map(results, & &1.title)
+      assert titles == ["High views", "Medium views", "Low views"]
+    end
   end
 
   defp date_string(%Date{year: y, month: m, day: d}) do

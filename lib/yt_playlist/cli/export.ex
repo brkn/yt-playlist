@@ -5,13 +5,13 @@ defmodule YtPlaylist.CLI.Export do
 
   alias YtPlaylist.{Repo, Formatter.Markdown}
 
-  @supported_sorts [:hot, :recent]
+  @supported_sorts [:hot, :recent, :popular]
 
   @doc """
   Exports videos from database as markdown to stdout.
 
   Options:
-    - `:sort` - :hot, :recent (default: :recent)
+    - `:sort` - :hot, :recent, :popular (default: :recent)
     - `:limit` - integer or nil
   """
   def run(db_path, opts \\ []) do

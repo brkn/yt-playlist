@@ -70,7 +70,7 @@ defmodule YtPlaylist.CLI do
       query <db> [options]             Query videos as ASCII table
 
     Options:
-      --sort hot|recent    Sort order (default: recent)
+      --sort hot|recent|popular    Sort order (default: recent)
       --limit N            Limit output to N videos
     """)
 

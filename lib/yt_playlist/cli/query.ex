@@ -5,13 +5,13 @@ defmodule YtPlaylist.CLI.Query do
 
   alias YtPlaylist.{Repo, Formatter.AsciiTable}
 
-  @supported_sorts [:hot, :recent]
+  @supported_sorts [:hot, :recent, :popular]
 
   @doc """
   Queries videos from database and displays as ASCII table to stdout.
 
   Options:
-    - `:sort` - :hot, :recent (default: :recent)
+    - `:sort` - :hot, :recent, :popular (default: :recent)
     - `:limit` - integer or nil
   """
   def run(db_path, opts \\ []) do

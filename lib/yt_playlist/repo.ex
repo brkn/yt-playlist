@@ -89,27 +89,46 @@ defmodule YtPlaylist.Repo do
   Query videos with sorting and limiting.
 
   Options:
-    - `:sort` - `:hot` (engagement/recency score) or `:recent` (upload_date desc, default)
+    - `:sort` - `:hot` (engagement/recency score), `:recent` (upload_date desc, default), or `:popular` (view_count desc)
     - `:limit` - integer or nil (default: nil, meaning all)
 
   Returns `{:ok, videos}` list of Video structs.
   """
   def videos(db_path, opts \\ []) do
-    sort = Keyword.get(opts, :sort, :recent)
+    sorting_type = Keyword.get(opts, :sort, :recent)
     limit = Keyword.get(opts, :limit)
 
     with_connection(db_path, fn ->
-      videos = all(sorted_videos_query(sort))
+      videos =
+        sorting_type
+        |> sorted_videos()
+        |> maybe_limit_videos(limit)
 
-      sorted =
-        case sort do
-          :hot -> sort_by_hot_score(videos)
-          _ -> videos
-        end
-
-      limited = if limit, do: Enum.take(sorted, limit), else: sorted
-      {:ok, limited}
+      {:ok, videos}
     end)
+  end
+
+  defp with_connection(db_path, fun) do
+    {:ok, _pid} = start_link(database: db_path, name: __MODULE__, pool_size: 1)
+    result = fun.()
+    Supervisor.stop(__MODULE__)
+    result
+  end
+
+  defp sorted_videos(:recent) do
+    from(v in Video, order_by: [desc: v.upload_date])
+    |> all()
+  end
+
+  defp sorted_videos(:hot) do
+    from(v in Video)
+    |> all()
+    |> sort_by_hot_score()
+  end
+
+  defp sorted_videos(:popular) do
+    from(v in Video, order_by: [desc: v.view_count])
+    |> all()
   end
 
   defp sort_by_hot_score(videos) do
@@ -123,19 +142,6 @@ defmodule YtPlaylist.Repo do
     |> Enum.map(fn {video, _} -> video end)
   end
 
-  defp with_connection(db_path, fun) do
-    {:ok, _pid} = start_link(database: db_path, name: __MODULE__, pool_size: 1)
-    result = fun.()
-    Supervisor.stop(__MODULE__)
-    result
-  end
-
-  defp sorted_videos_query(:recent) do
-    from(v in Video, order_by: [desc: v.upload_date])
-  end
-
-  defp sorted_videos_query(:hot) do
-    # Hot sorting is done in Elixir via sort_by_hot_score/1
-    from(v in Video)
-  end
+  defp maybe_limit_videos(videos, nil), do: videos
+  defp maybe_limit_videos(videos, limit), do: Enum.take(videos, limit)
 end

@@ -142,14 +142,31 @@ defmodule YtPlaylist.CLI.QueryTest do
       refute output =~ "Video 1"
     end
 
-    # TODO: rename top to popular, it matches the youtube's domain language.
-    test "--sort top returns not implemented error", %{db_path: db_path} do
-      videos = [%Video{title: "Test", webpage_url: "https://youtube.com/watch?v=test"}]
-      {:ok, 1} = Repo.save_videos(db_path, "Test", videos)
+    test "--sort popular returns videos sorted by view count descending", %{db_path: db_path} do
+      videos = [
+        %Video{
+          title: "Low Views",
+          webpage_url: "https://youtube.com/watch?v=low",
+          view_count: 100
+        },
+        %Video{
+          title: "High Views",
+          webpage_url: "https://youtube.com/watch?v=high",
+          view_count: 1_000_000
+        }
+      ]
 
-      result = Query.run(db_path, sort: :top)
+      {:ok, 2} = Repo.save_videos(db_path, "Test", videos)
 
-      assert {:error, "sort 'top' not implemented"} = result
+      output =
+        capture_io(fn ->
+          assert :ok = Query.run(db_path, sort: :popular)
+        end)
+
+      high_pos = :binary.match(output, "High Views") |> elem(0)
+      low_pos = :binary.match(output, "Low Views") |> elem(0)
+
+      assert high_pos < low_pos, "High views video should appear first with popular sort"
     end
   end
 end
