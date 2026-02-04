@@ -50,15 +50,6 @@ defmodule YtPlaylist.CLI.QueryTest do
       assert {:error, "database not found: /nonexistent/path.db"} = result
     end
 
-    test "returns error for unsupported sort", %{db_path: db_path} do
-      {:ok, 1} =
-        Repo.save_videos(db_path, "Test", [
-          %Video{title: "V", webpage_url: "https://youtube.com/watch?v=x"}
-        ])
-
-      assert {:error, "sort 'nonsense' not implemented"} = Query.run(db_path, sort: :nonsense)
-    end
-
     test "--sort hot returns videos sorted by hot score", %{db_path: db_path} do
       today = Date.utc_today() |> Date.to_iso8601(:basic)
       old_date = "20200101"

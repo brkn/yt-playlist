@@ -86,14 +86,11 @@ Export as markdown:
 
 ## TODO
 
-- [x] `--sort popular` option (pure view count)
 - [ ] Suppress yt-dlp output unless `--verbose` passed
   - Commands should still hold the hand of the user
   - `...fetching the playlist 1/?` or spinner idk
 
 - [ ] UX rewrite
-  - [x] Cache databases in `~/.config/yt-playlist`
-  - [x] Name db files by playlist ID (`PLxxxxx.db`)
   - [ ] Interactive browser config on first extract:
     ```
     $ yt_playlist "https://..."
@@ -106,7 +103,5 @@ Export as markdown:
     Saved to ~/.config/yt_playlist/
     ```
   - [ ] Accept URL directly for query/export (auto-extract if not cached)
-  - [x] Command to show cached playlists (`list`)
-  - [x] Flag to force re-extraction (`--force`)
 
 - [ ] Cross-platform binaries (Linux, Windows)

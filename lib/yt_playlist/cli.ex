@@ -3,8 +3,10 @@ defmodule YtPlaylist.CLI do
   Command-line interface entry point for yt_playlist.
   """
 
-  alias YtPlaylist.CLI.{Extract, Export, List, Query}
+  alias YtPlaylist.CLI.{List, Query}
   alias YtPlaylist.Config
+
+  @supported_sorts ~w(hot recent popular)
 
   @doc """
   Main entry point for the escript.
@@ -13,77 +15,74 @@ defmodule YtPlaylist.CLI do
   def main(args) do
     Config.ensure_dirs!()
 
-    case args do
-      ["extract" | rest] -> parse_extract(rest)
-      ["export-to-md" | rest] -> parse_export(rest)
-      ["query" | rest] -> parse_query(rest)
-      ["list"] -> List.run()
-      _ -> exit_with_usage()
+    args
+    |> parse_args()
+    |> case do
+      :list -> List.run()
+      {:query, source, opts} -> Query.run(source, opts)
+      error -> error
     end
-    |> handle_result()
+    |> handle_command_result()
   end
 
-  defp parse_extract([url | rest]) do
-    {opts, _, _} = OptionParser.parse(rest, strict: [force: :boolean])
-    Extract.run(url, opts)
+  defp parse_args([]), do: {:error, :usage}
+  defp parse_args(["list"]), do: :list
+
+  defp parse_args(args) do
+    args
+    |> call_option_parser()
+    |> case do
+      {opts, [source], []} -> parse_opts(source, opts)
+      {_, _, [{flag, _} | _]} -> {:error, "unknown option: #{flag}"}
+      _ -> {:error, :usage}
+    end
   end
 
-  defp parse_extract([]), do: exit_with_usage()
+  defp parse_opts(source, opts) do
+    sort_option = Keyword.get(opts, :sort, "recent")
 
-  defp parse_export([db_path | rest]) do
-    {opts, _, _} =
-      OptionParser.parse(rest, strict: [sort: :string, limit: :integer])
-
-    sort =
-      opts
-      |> Keyword.get(:sort, "recent")
-      |> String.to_atom()
-
-    limit = Keyword.get(opts, :limit)
-
-    Export.run(db_path, sort: sort, limit: limit)
+    with {:ok, sort} <- parse_sort(sort_option) do
+      {:query, source, Keyword.put(opts, :sort, sort)}
+    end
   end
 
-  defp parse_export([]), do: exit_with_usage()
-
-  defp parse_query([db_path | rest]) do
-    {opts, _, _} =
-      OptionParser.parse(rest, strict: [sort: :string, limit: :integer])
-
-    sort =
-      opts
-      |> Keyword.get(:sort, "recent")
-      |> String.to_atom()
-
-    limit = Keyword.get(opts, :limit)
-
-    Query.run(db_path, sort: sort, limit: limit)
+  defp call_option_parser(args) do
+    OptionParser.parse(args,
+      strict: [sort: :string, limit: :integer, output: :string],
+      aliases: [s: :sort, n: :limit, o: :output]
+    )
   end
 
-  defp parse_query([]), do: exit_with_usage()
+  @doc """
+  Parses a sort string into a supported sort atom.
+  """
+  def parse_sort(sort) when sort in @supported_sorts, do: {:ok, String.to_atom(sort)}
 
-  @dialyzer {:nowarn_function, handle_result: 1}
-  defp handle_result({:ok, msg}), do: IO.puts(msg)
-  defp handle_result(:ok), do: :ok
-  defp handle_result({:error, reason}), do: exit_with_error(reason)
+  def parse_sort(sort) do
+    {:error, "sort '#{sort}' not supported. Use: #{Enum.join(@supported_sorts, ", ")}"}
+  end
+
+  @dialyzer {:nowarn_function, handle_command_result: 1}
+  defp handle_command_result({:ok, msg}), do: IO.puts(msg)
+  defp handle_command_result(:ok), do: :ok
+  defp handle_command_result({:error, :usage}), do: exit_with_usage()
+  defp handle_command_result({:error, reason}), do: exit_with_error(reason)
 
   @dialyzer {:nowarn_function, exit_with_usage: 0}
   defp exit_with_usage do
     IO.puts("""
-    Usage: yt_playlist <command>
+    Usage: yt_playlist <url|db_path> [options]
+           yt_playlist list
 
     Commands:
-      extract <url> [options]          Extract playlist to SQLite
-      export-to-md <db> [options]      Export videos as markdown
-      query <db> [options]             Query videos as ASCII table
-      list                             Show cached playlists
+      <url>       Extract and query a YouTube playlist (caches locally)
+      <db_path>   Query an existing cached playlist
+      list        Show all cached playlists
 
-    Extract options:
-      --force              Re-extract even if already indexed
-
-    Query/Export options:
-      --sort hot|recent|popular    Sort order (default: recent)
-      --limit N                    Limit output to N videos
+    Options:
+      -s, --sort <method>   Sort by: hot, recent, popular (default: recent)
+      -n, --limit <n>       Limit output to n videos
+      -o <file>             Write markdown to file instead of ASCII table
     """)
 
     System.halt(1)

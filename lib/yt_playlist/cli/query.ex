@@ -6,8 +6,6 @@ defmodule YtPlaylist.CLI.Query do
   alias YtPlaylist.{Playlist, Repo, YtDlp}
   alias YtPlaylist.Formatter.{AsciiTable, Markdown}
 
-  @supported_sorts [:hot, :recent, :popular]
-
   @doc """
   Queries videos from a source (URL or db_path) and outputs as table or markdown.
 
@@ -17,10 +15,7 @@ defmodule YtPlaylist.CLI.Query do
     - `:output` - path to write markdown file (nil = ASCII table to stdout)
   """
   def run(source, opts \\ []) do
-    sort = Keyword.get(opts, :sort, :recent)
-
-    with :ok <- validate_sort(sort),
-         {:ok, db_path} <- resolve_source(source),
+    with {:ok, db_path} <- resolve_source(source),
          {:ok, videos} <- Repo.videos(db_path, opts) do
       output(videos, opts)
     end
@@ -53,9 +48,6 @@ defmodule YtPlaylist.CLI.Query do
       {:error, :not_found} -> {:error, "database not found: #{db_path}"}
     end
   end
-
-  defp validate_sort(sort) when sort in @supported_sorts, do: :ok
-  defp validate_sort(sort), do: {:error, "sort '#{sort}' not implemented"}
 
   defp output(videos, opts) do
     case Keyword.get(opts, :output) do
