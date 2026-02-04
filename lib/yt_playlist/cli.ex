@@ -8,6 +8,11 @@ defmodule YtPlaylist.CLI do
 
   @supported_sorts ~w(hot recent popular)
 
+  @browsers ~w(chrome firefox safari edge)
+  @browsers_selection_prompt @browsers
+                             |> Enum.with_index(1)
+                             |> Enum.map_join("\n", fn {name, i} -> "  #{i}. #{name}" end)
+
   @doc """
   Main entry point for the escript.
   """
@@ -17,6 +22,7 @@ defmodule YtPlaylist.CLI do
 
     args
     |> parse_args()
+    |> tap(&ensure_browser/1)
     |> case do
       :list -> List.run()
       {:query, source, opts} -> Query.run(source, opts)
@@ -51,6 +57,35 @@ defmodule YtPlaylist.CLI do
       strict: [sort: :string, limit: :integer, output: :string],
       aliases: [s: :sort, n: :limit, o: :output]
     )
+  end
+
+  defp ensure_browser({:query, "http" <> _, _}) do
+    case Config.browser() do
+      nil -> prompt_browser()
+      _ -> :ok
+    end
+  end
+
+  defp ensure_browser(_args), do: :ok
+
+  defp prompt_browser do
+    IO.puts("No browser configured. Which browser are you logged into YouTube with?")
+    IO.puts(@browsers_selection_prompt)
+
+    IO.gets("> ")
+    |> String.trim()
+    |> Integer.parse()
+    |> case do
+      {n, ""} when n in 1..length(@browsers)//1 ->
+        @browsers
+        |> Enum.at(n - 1)
+        |> tap(&Config.save_browser!(&1))
+        |> then(&IO.puts("Saved browser: #{&1}"))
+
+      _ ->
+        IO.puts("Invalid choice, try again.\n")
+        prompt_browser()
+    end
   end
 
   @doc """

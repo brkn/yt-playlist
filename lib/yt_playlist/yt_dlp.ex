@@ -3,7 +3,7 @@ defmodule YtPlaylist.YtDlp do
   Wrapper around yt-dlp CLI for extracting YouTube playlist metadata.
   """
 
-  alias YtPlaylist.Video
+  alias YtPlaylist.{Config, Video}
 
   @doc """
   Fetches the title of a YouTube playlist.
@@ -20,7 +20,7 @@ defmodule YtPlaylist.YtDlp do
           "--print",
           "playlist_title",
           "--cookies-from-browser",
-          "firefox",
+          Config.browser(),
           url
         ]
       )
@@ -46,7 +46,7 @@ defmodule YtPlaylist.YtDlp do
           "--ignore-no-formats-error",
           "--dump-json",
           "--cookies-from-browser",
-          "firefox",
+          Config.browser(),
           url
         ]
       )
