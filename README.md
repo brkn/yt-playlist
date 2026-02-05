@@ -1,28 +1,21 @@
 # yt_playlist
 
-YouTube's playlist sorting is broken. Popular videos from 5 years ago drown out recent content. This tool fixes it.
-
-## What it does
-
-Extracts YouTube playlist metadata into SQLite and provides a "hot" ranking that balances views with recency:
-
-```
-hot_score = (views + 0.6 × likes)^0.8 / (days + 1)^1.5
-```
-
-Recent videos with moderate engagement rank higher than ancient viral hits.
+Sort any YouTube playlist by recent popularity.
 
 ## Quick start
 
-Try it with the included demo database:
-
 ```bash
-# Download the binary (macOS ARM64)
-curl -LO https://github.com/user/yt_playlist/releases/latest/download/yt_playlist_macos_arm64
-chmod +x yt_playlist_macos_arm64
+# Extract + query a playlist in one step (sorted by hot score, top 10)
+./yt_playlist "https://www.youtube.com/playlist?list=PLxyz..." -s hot -n 10
 
-# Query with hot ranking
-./yt_playlist_macos_arm64 query examples/demo.db --sort hot --limit 10
+# Query an already-cached playlist
+./yt_playlist ~/.config/yt-playlist/PLxyz.db -s hot
+
+# Export to markdown
+./yt_playlist ~/.config/yt-playlist/PLxyz.db -s hot -o output.md
+
+# See cached playlists
+./yt_playlist list
 ```
 
 Output:
@@ -35,58 +28,40 @@ Output:
 
 ## Install
 
-### Binary (recommended)
+### Homebrew
 
-Download from releases. Available for macOS ARM64.
+> [!NOTE]
+> Only macOS ARM (Apple Silicon) is available for now. Other platforms will be added soon.
+
+```bash
+brew install brkn/tap/yt-playlist
+```
 
 ### Build from source
 
-Requires Elixir 1.19+:
+Clone and run `./build.sh` (requires Elixir 1.19+).
 
-```bash
-git clone https://github.com/user/yt_playlist
-cd yt_playlist
-./build.sh
-# Binary at burrito_out/yt_playlist_macos_arm64
-```
+## Options
 
-## Usage
+| Flag                  | Description                                             |
+| --------------------- | ------------------------------------------------------- |
+| `-s, --sort <method>` | Sort by: `hot`, `recent`, `popular` (default: `recent`) |
+| `-n, --limit <n>`     | Limit output to n videos                                |
+| `-o <file>`           | Write markdown to file instead of ASCII table           |
 
-### extract
-
-Extract a playlist to SQLite (requires yt-dlp):
-
-```bash
-./yt_playlist extract "https://www.youtube.com/playlist?list=PLxyz..."
-# Creates: Playlist_Name.db
-```
-
-### query
-
-Display videos as ASCII table:
-
-```bash
-./yt_playlist query MyPlaylist.db --sort hot --limit 20
-./yt_playlist query MyPlaylist.db --sort recent
-```
-
-### export-to-md
-
-Export as markdown:
-
-```bash
-./yt_playlist export-to-md MyPlaylist.db --sort hot --limit 10 > output.md
-```
+Passing a URL extracts the playlist (if not already cached) and queries it. Passing a db path queries an existing cache.
 
 ## Requirements
 
-- yt-dlp (for extraction only, not needed for querying existing databases)
-- Firefox with YouTube cookies (yt-dlp uses `--cookies-from-browser firefox`)
-  - [ ] TODO: remove this after ux improvements. There is a task for configuration.
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp) (for extraction only, not needed for querying existing databases)
+- A browser logged into YouTube (you'll be prompted to select which browser on first run)
 
 ## TODO
 
-- [ ] Suppress yt-dlp output unless `--verbose` passed
-  - Commands should still hold the hand of the user
-  - `...fetching the playlist 1/?` or spinner idk
+- [ ] Suppress yt-dlp output / show progress during extraction
 - [ ] Cross-platform binaries (Linux, Windows)
+- `list` improvements:
+  - [ ] Rename to `cache`
+  - [ ] Add header line
+  - [ ] Show playlist name instead of ID
+- [ ] Show a message when fetching a playlist for the first time (cold call is silent)
