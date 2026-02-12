@@ -30,3 +30,8 @@ yt_playlist-*.tar
 
 # Local test databases
 *.db
+*.db-shm
+*.db-wal
+
+# But keep demo database
+!examples/demo.db
