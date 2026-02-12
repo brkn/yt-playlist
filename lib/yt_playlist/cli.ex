@@ -3,7 +3,7 @@ defmodule YtPlaylist.CLI do
   Command-line interface entry point for yt_playlist.
   """
 
-  alias YtPlaylist.CLI.{Extract, Export}
+  alias YtPlaylist.CLI.{Extract, Export, Query}
 
   @doc """
   Main entry point for the escript.
@@ -13,7 +13,7 @@ defmodule YtPlaylist.CLI do
     case args do
       ["extract", url] -> Extract.run(url)
       ["export-to-md" | rest] -> parse_export(rest)
-      ["query", _db_path] -> {:error, "not implemented"}
+      ["query" | rest] -> parse_query(rest)
       _ -> exit_with_usage()
     end
     |> handle_result()
@@ -35,6 +35,22 @@ defmodule YtPlaylist.CLI do
 
   defp parse_export([]), do: exit_with_usage()
 
+  defp parse_query([db_path | rest]) do
+    {opts, _, _} =
+      OptionParser.parse(rest, strict: [sort: :string, limit: :integer])
+
+    sort =
+      opts
+      |> Keyword.get(:sort, "recent")
+      |> String.to_atom()
+
+    limit = Keyword.get(opts, :limit)
+
+    Query.run(db_path, sort: sort, limit: limit)
+  end
+
+  defp parse_query([]), do: exit_with_usage()
+
   @dialyzer {:nowarn_function, handle_result: 1}
   defp handle_result({:ok, msg}), do: IO.puts(msg)
   defp handle_result(:ok), do: :ok
@@ -48,8 +64,9 @@ defmodule YtPlaylist.CLI do
     Commands:
       extract <url>                    Extract playlist to SQLite
       export-to-md <db> [options]      Export videos as markdown
+      query <db> [options]             Query videos as ASCII table
 
-    export-to-md options:
+    Options:
       --sort hot|recent    Sort order (default: recent)
       --limit N            Limit output to N videos
     """)
