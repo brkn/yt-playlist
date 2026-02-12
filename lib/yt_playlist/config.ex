@@ -5,10 +5,8 @@ defmodule YtPlaylist.Config do
   Stores user preferences in `~/.config/yt-playlist/config.json`.
   """
 
-  @default_config_dir Path.expand("~/.config/yt-playlist")
-
   def config_dir do
-    Application.get_env(:yt_playlist, :config_dir, @default_config_dir)
+    Application.get_env(:yt_playlist, :config_dir) || Path.expand("~/.config/yt-playlist")
   end
 
   @doc """
