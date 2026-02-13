@@ -6,16 +6,16 @@ Sort any YouTube playlist by recent popularity.
 
 ```bash
 # Extract + query a playlist in one step (sorted by hot score, top 10)
-./yt_playlist "https://www.youtube.com/playlist?list=PLxyz..." -s hot -n 10
+yt_playlist "https://www.youtube.com/playlist?list=PLxyz..." -s hot -n 10
 
 # Query an already-cached playlist
-./yt_playlist ~/.config/yt-playlist/PLxyz.db -s hot
+yt_playlist ~/.config/yt-playlist/PLxyz.db -s hot
 
 # Export to markdown
-./yt_playlist ~/.config/yt-playlist/PLxyz.db -s hot -o output.md
+yt_playlist https://www.youtube.com/playlist?list=PLvL2NEhYV4Zu421KzHuLICUqieJXI2o_Z -s hot -o output.md
 
 # See cached playlists
-./yt_playlist list
+yt_playlist list
 ```
 
 Output:
@@ -58,6 +58,7 @@ Passing a URL extracts the playlist (if not already cached) and queries it. Pass
 
 ## TODO
 
+- [ ] `--help` should render the usage message
 - [ ] Suppress yt-dlp output / show progress during extraction
 - [ ] Cross-platform binaries (Linux, Windows)
 - `list` improvements:
